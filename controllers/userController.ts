@@ -1,8 +1,8 @@
-import express, { Response, Request, NextFunction, Router } from 'express';
-import User from '../models/userModel';
-import { AppError } from '../middlewares/errorHandler';
-import bcrypt from 'bcrypt';
-import { decode, Jwt, JwtPayload, sign, verify } from 'jsonwebtoken';
+import express, { Response, Request, NextFunction, Router } from "express";
+import User from "../models/userModel";
+import { AppError } from "../middlewares/errorHandler";
+import bcrypt from "bcrypt";
+import { decode, Jwt, JwtPayload, sign, verify } from "jsonwebtoken";
 
 interface AuthForm {
   email: string;
@@ -16,10 +16,11 @@ export const create_user = async (
 ) => {
   try {
     const { email, password }: AuthForm = req.body;
+    console.log(email, password);
     if (email && password) {
       const isUserExist = await User.findOne({ email });
       if (isUserExist) {
-        const error: AppError = new Error('User already exists');
+        const error: AppError = new Error("User already exists");
         error.statusCode = 400;
         next(error);
         return;
@@ -31,14 +32,14 @@ export const create_user = async (
       });
       const token = generateToken(newUser._id);
       const cookie = `token=${token}; samesite=none; secure, max-age=3600000; path=/`;
-      res.setHeader('set-cookie', cookie);
+      res.setHeader("set-cookie", cookie);
       res.status(201).json({
         user: newUser,
         token,
         confirmationRoute: `http://localhost:8000/users/confirm/${token}`,
       });
     } else {
-      const error: AppError = new Error('Email and Password required');
+      const error: AppError = new Error("Email and Password required");
       next(error);
     }
   } catch (error) {
@@ -56,7 +57,7 @@ export const login_user = async (
   try {
     const userExist = await User.findOne({ email });
     if (!userExist) {
-      const error: AppError = new Error('Email does not exists');
+      const error: AppError = new Error("Email does not exists");
       error.statusCode = 404;
       next(error);
       return;
@@ -65,7 +66,7 @@ export const login_user = async (
     if (checkPassword) {
       if (!userExist.isAccountActive) {
         const acctInActiveError: AppError = new Error(
-          'Please, activate the account before you can login'
+          "Please, activate the account before you can login"
         );
         acctInActiveError.statusCode = 400;
         next(acctInActiveError);
@@ -73,10 +74,10 @@ export const login_user = async (
       }
       const token = generateToken(userExist._id);
       const cookie = `token=${token}; samesite=none; secure, max-age=3600000; path=/`;
-      res.setHeader('set-cookie', cookie);
+      res.setHeader("set-cookie", cookie);
       res.status(201).json({ user: userExist });
     } else {
-      const wrongPasswordError: AppError = new Error('Passwords do not match');
+      const wrongPasswordError: AppError = new Error("Passwords do not match");
       wrongPasswordError.statusCode = 401;
       next(wrongPasswordError);
       return;
@@ -92,25 +93,29 @@ export const confirm_email = async (
   next: NextFunction
 ) => {
   const { usertoken } = req.params;
-  const verifyToken = verify(usertoken, 'hello') as JwtPayload;
-  if (typeof verify === 'string') {
-    throw new Error('Invalid token');
+  const verifyToken = verify(usertoken, "hello") as JwtPayload;
+  if (typeof verify === "string") {
+    throw new Error("Invalid token");
   }
   const findUser = await User.findById(verifyToken.id);
   if (!findUser) {
-    throw new Error('Link probably been tampered with');
+    throw new Error("Link probably been tampered with");
   }
-  const confirmUser = await User.findByIdAndUpdate(verifyToken.id, {
-    isAccountActive: true,
-  });
+  const confirmUser = await User.findByIdAndUpdate(
+    verifyToken.id,
+    {
+      isAccountActive: true,
+    },
+    { new: true }
+  );
   const token = generateToken(findUser._id);
   const cookie = `token=${token}; samesite=none; secure, max-age=3600000; path=/`;
-  res.setHeader('set-cookie', cookie);
+  res.setHeader("set-cookie", cookie);
   res
     .status(200)
     .json({ token: (verifyToken as JwtPayload).id, user: findUser });
 };
 
 const generateToken = (id: any) => {
-  return sign({ id }, 'hello');
+  return sign({ id }, "hello");
 };
