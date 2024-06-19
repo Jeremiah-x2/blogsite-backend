@@ -10,16 +10,19 @@ export const create_comment = async (
 ) => {
   try {
     const author = req.user;
+    const authorName = req.author;
     const { content } = req.body;
     const { blog } = req.params;
+    console.log(req.body);
     if (!author) {
       throw new CustomAppError("Login before you can comment", 401);
     }
     if (content === "") {
       throw new CustomAppError("Content cannont be empty", 400);
     } else {
-      const newComment = Comment.create({
+      const newComment = await Comment.create({
         author,
+        authorName,
         blog,
         content,
         date: new Date(),
@@ -37,6 +40,8 @@ export const get_blog_comments = async (
   next: NextFunction
 ) => {
   const { blogId } = req.params;
-  const comments = await Comment.find({ _id: blogId });
+  console.log(blogId);
+  const comments = await Comment.find({ blog: blogId });
+  console.log(comments);
   res.status(200).json({ comments });
 };

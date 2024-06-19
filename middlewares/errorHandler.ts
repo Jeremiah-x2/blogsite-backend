@@ -1,12 +1,12 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from "express";
 
 export interface AppError extends Error {
   statusCode?: number;
 }
 
 export class CustomAppError implements AppError {
-  name: string = 'AppError';
-  message: string = 'An error occured';
+  name: string = "AppError";
+  message: string = "An error occured";
   statusCode?: number | undefined;
   stack?: string | undefined;
 
@@ -23,14 +23,13 @@ const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.log('Middleware Error Hadnling');
   const errStatus = err.statusCode || 500;
-  const errMsg = err.message || 'Something went wrong';
+  const errMsg = err.message || "Something went wrong";
   res.status(errStatus).json({
     success: false,
     status: errStatus,
     message: errMsg,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : {},
+    stack: process.env.NODE_ENV === "development" ? err.stack : {},
   });
 };
 

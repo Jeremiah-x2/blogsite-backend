@@ -9,29 +9,27 @@ export const create_blog = async (
   next: NextFunction
 ) => {
   const author = req.user;
+  const authorName = req.author;
   console.log(author);
   const { title, content }: { title: string; content: string } = req.body;
   try {
     if (!author) {
-      const unAuthErr: AppError = new Error(
-        "Unauthorised. You can't create a blog because you are not signed in"
+      throw new CustomAppError(
+        "You can't create a blog because you are not signed in",
+        401
       );
-      unAuthErr.statusCode = 401;
-      next(unAuthErr);
-      return;
     }
     if (!title || !content) {
-      const requiredError: AppError = new Error(
-        "Both title and content for the blog must be provided"
+      throw new CustomAppError(
+        "Both title and content for the blog must be provided",
+        500
       );
-      next(requiredError);
-      return;
     }
     const newBlog = await Blog.create({
-      author,
+      authorId: author,
       title,
+      authorName,
       content,
-      likes: 0,
       createdAt: new Date(),
       tags: ["TODO"],
     });
@@ -55,8 +53,7 @@ export const update_blog = async (
   try {
     const blog = await Blog.findById(blogId);
 
-    console.log(blog?.author.toString(), Object(author));
-    if (blog && blog.author.toString() === author._id.toString()) {
+    if (blog && blog.authorId.toString() === author._id.toString()) {
       const updateOps: ParamsDictionary = {};
       for (const ops of req.body) {
         updateOps[ops.propName] = ops.value;
@@ -69,16 +66,13 @@ export const update_blog = async (
       return res.status(201).json({ updatedBlog });
     }
     if (!blog) {
-      const blogErr: AppError = new Error("Blog not found");
-      blogErr.statusCode = 404;
-      return next(blogErr);
+      throw new CustomAppError("Blog not found", 404);
     }
-    if (blog.author !== author) {
-      const userErr: AppError = new Error(
-        "User does not have permission to modify this blog"
+    if (blog.authorId !== author) {
+      throw new CustomAppError(
+        "User does not have permission to modify this blog",
+        401
       );
-      userErr.statusCode = 401;
-      return next(userErr);
     }
   } catch (error) {
     next(error);
@@ -92,7 +86,6 @@ export const get_all_blogs = async (
 ) => {
   try {
     const allBlogs = await Blog.find();
-    console.log(allBlogs);
     return res.status(200).json({ blogs: allBlogs });
   } catch (error) {
     next(error);
@@ -109,7 +102,7 @@ export const delete_blog = async (
     const { blogId } = req.params;
     const isBlogExist = await Blog.findById(blogId);
     console.log(author, isBlogExist);
-    if (isBlogExist && author === isBlogExist.author.toString()) {
+    if (isBlogExist && author === isBlogExist.authorId.toString()) {
       const deleteBlog = await Blog.findByIdAndDelete(blogId);
       return res.status(201).json({ blog: deleteBlog });
     }
@@ -119,6 +112,38 @@ export const delete_blog = async (
     if (author !== isBlogExist._id) {
       throw new CustomAppError("User can't delete this blog", 401);
     }
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const like_blog = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  console.log("Liking a blog", req.params.blogId);
+  try {
+    const user = req.user;
+    const { blogId } = req.params;
+    const blog = await Blog.findById(blogId);
+    if (!blogId) {
+      throw new CustomAppError("Blog not found", 404);
+    }
+    if (blog?.likes.includes(user)) {
+      const unlikeBlog = await Blog.updateOne(
+        { _id: blogId },
+        { $pull: { likes: user } },
+        { new: true }
+      );
+      return res.status(201).json({ blog: unlikeBlog });
+    }
+    const likeBlog = await Blog.updateOne(
+      { _id: blogId },
+      { $push: { likes: user } },
+      { new: true }
+    );
+    return res.status(201).json({ blog: likeBlog });
   } catch (error) {
     next(error);
   }
