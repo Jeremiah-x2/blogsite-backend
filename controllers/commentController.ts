@@ -27,6 +27,13 @@ export const create_comment = async (
         content,
         date: new Date(),
       });
+      if (newComment) {
+        const updateBlogComment = await Blog.updateOne(
+          { _id: blog },
+          { $inc: { comments: 1 } },
+          { new: true }
+        );
+      }
       res.status(201).json({ comment: newComment });
     }
   } catch (error) {

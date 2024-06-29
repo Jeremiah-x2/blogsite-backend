@@ -19,10 +19,11 @@ export const protect = async (
 ) => {
   try {
     const token = req.cookies.token;
+    console.log(token);
     if (!token) {
       throw new CustomAppError("No token provided", 401);
     }
-    const verifyToken = verify(token, process.env.JWT_KEY!) as JwtPayload;
+    const verifyToken = verify(token, "hello") as JwtPayload;
     const isUser = await User.findById(verifyToken.id);
     if (!isUser) {
       throw new CustomAppError("User not found", 404);
@@ -36,14 +37,14 @@ export const protect = async (
     } else if (error instanceof Error) {
       console.log(error);
       if (error.name === "JsonWebTokenError") {
-        next(new CustomAppError("Invalid token", 401));
+        next(new CustomAppError("Invalid token" + error, 401));
       } else if (error.name === "TokenExpiredError") {
-        next(new CustomAppError("Token expired", 401));
+        next(new CustomAppError("Token expired" + error, 401));
       } else {
-        next(new CustomAppError("Authentication failed", 500));
+        next(new CustomAppError("Authentication failed" + error, 500));
       }
     } else {
-      next(new CustomAppError("An unknown error occurred", 500));
+      next(new CustomAppError("An unknown error occurred" + error, 500));
     }
   }
 };

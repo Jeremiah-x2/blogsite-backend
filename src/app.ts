@@ -8,10 +8,15 @@ import express, {
 import dotenv from "dotenv";
 import userRoutes from "../routes/usersRoutes";
 import blogRoutes from "../routes/blogRoutes";
-import commentRoutes from '../routes/commentRoutes'
-import mongoose, { mongo } from "mongoose";
+import commentRoutes from "../routes/commentRoutes";
+import mongoose, { mongo, Mongoose } from "mongoose";
 import cookieParser = require("cookie-parser");
 import errorHandler from "../middlewares/errorHandler";
+import passport = require("passport");
+import session from "express-session";
+import MongoStore = require("connect-mongo");
+// import { session } from "passport";
+import "../strategies/githubStrategy";
 
 dotenv.config();
 
@@ -23,9 +28,21 @@ const port = process.env.PORT || 8000;
 const db = mongoose.connection;
 db.on("connected", () => console.log("Connected to DataBase successfully"));
 
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
+app.use(
+  session({
+    secret: "jeremiah",
+    saveUninitialized: true,
+    resave: false,
+    cookie: { maxAge: 60000 * 60 },
+    store: MongoStore.create({ client: mongoose.connection.getClient() }),
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.use((req: Request, res: Response, next: NextFunction) => {
   res.header("Access-Control-Allow-Origin", process.env.ACCESS_ORIGIN);
@@ -40,6 +57,20 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
   next();
 });
+
+app.get(
+  "/user/auth/github",
+  passport.authenticate("github", { scope: ["user:email"] })
+);
+
+app.get(
+  "/user/gitoauth/callback",
+  passport.authenticate("github", { failureRedirect: "/login" }),
+  function (req, res) {
+    res.redirect("/");
+    return;
+  }
+);
 
 app.use("/users", userRoutes);
 app.use("/blogs", blogRoutes);

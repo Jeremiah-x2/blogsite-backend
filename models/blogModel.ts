@@ -8,6 +8,7 @@ interface IBlog {
   content: string;
   createdAt: Date;
   likes: mongoose.Types.ObjectId[];
+  comments: number;
   tags: string[];
 }
 
@@ -24,7 +25,8 @@ const BlogSchema = new Schema<IBlog>({
   },
   content: { type: String, required: [true, "Provide content for your blog"] },
   createdAt: { type: Date },
-  likes: [mongoose.Schema.Types.ObjectId],
+  likes: { type: [mongoose.Schema.Types.ObjectId], ref: "User" },
+  comments: { type: Number },
   tags: [String],
 });
 

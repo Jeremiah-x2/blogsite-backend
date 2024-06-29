@@ -3,6 +3,7 @@ import isEmail from "validator/lib/isEmail";
 import bcrypt from "bcrypt";
 
 interface IUser {
+  userAvatar: string;
   email: string;
   password: string;
   isAccountActive: boolean;
@@ -11,6 +12,7 @@ interface IUser {
 
 const userSchema = new Schema<IUser>(
   {
+    userAvatar: String,
     email: {
       type: String,
       required: [true, "Enter your email address"],

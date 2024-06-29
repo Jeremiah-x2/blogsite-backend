@@ -2,14 +2,15 @@ import express, { Request, Response, NextFunction } from "express";
 import User from "../models/userModel";
 import Blog from "../models/blogModel";
 import { AppError, CustomAppError } from "../middlewares/errorHandler";
+import { v2 as cloudinary } from "cloudinary";
 
 export const create_blog = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  const author = req.user;
-  const authorName = req.author;
+  const author: string = req.user;
+  const authorName: string = req.author;
   console.log(author);
   const { title, content }: { title: string; content: string } = req.body;
   try {

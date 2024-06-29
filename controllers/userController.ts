@@ -3,11 +3,14 @@ import User from "../models/userModel";
 import { AppError, CustomAppError } from "../middlewares/errorHandler";
 import bcrypt from "bcrypt";
 import { decode, Jwt, JwtPayload, sign, verify } from "jsonwebtoken";
+import emailjs from "@emailjs/nodejs";
+import { v2 as cloudinary } from "cloudinary";
 
 interface AuthForm {
+  image: string;
   email: string;
   password: string;
-  name: string;
+  username: string;
 }
 
 export const create_user = async (
@@ -15,35 +18,54 @@ export const create_user = async (
   res: Response,
   next: NextFunction
 ) => {
+  cloudinary.config({
+    cloud_name: "dxkviv7wu",
+    api_key: "981812317659488",
+    api_secret: "4jzJsLS6NiedS0fJP0zgy_668iY",
+  });
   try {
-    const { email, password, name }: AuthForm = req.body;
-    console.log(email, password);
+    const { image, email, password, username }: AuthForm = req.body;
     if (email && password) {
       const isUserExist = await User.findOne({ email });
       if (isUserExist) {
         throw new CustomAppError("User already exists", 409);
       }
-      const hashedPassword = await bcrypt.hash(password, 10);
+      // const hashedPassword = await bcrypt.hash(password, 10);
+      const uploadResult = await cloudinary.uploader
+        .upload(image, {
+          public_id: `${email.split("@")[0]}_${username}`,
+        })
+        .catch((error) => {
+          console.log("Error", error);
+          throw new Error(`Hello world ${error}`);
+        });
+      // @ts-ignore
+      console.log("Uploaded image", uploadResult.url);
       const newUser = await User.create({
+        // @ts-ignore
+        userAvatar: uploadResult.url,
         email,
         password,
-        name,
+        name: username,
       });
+
       const token = generateToken(newUser._id);
-      const cookie = `token=${token}; samesite=none; secure, max-age=3600000; path=/`;
-      res.setHeader("set-cookie", cookie);
-      res.status(201).json({
+      // const cookie = `token=${token}; samesite=none; secure, max-age=3600000; path=/`;
+
+      // res.setHeader("set-cookie", cookie);
+      console.log(newUser);
+      res.json({
         user: newUser,
-        token,
-        confirmationRoute: `http://localhost:8000/users/confirm/${token}`,
+        confirmationRoute: `http://localhost:3000/users/confirm/${token}`,
+        uploadResult,
       });
     } else {
       throw new CustomAppError("Email and Password required", 500);
     }
   } catch (error) {
+    console.log(error);
     next(error);
   }
-  next();
 };
 
 export const login_user = async (
@@ -67,7 +89,11 @@ export const login_user = async (
       }
       const token = generateToken(userExist._id);
       const cookie = `token=${token}; samesite=none; secure; max-age=3600000; path=/`;
-      res.setHeader("set-cookie", cookie);
+      res.setHeader("set-cookie", [
+        cookie,
+        `user=${userExist._id}; samesite=none; secure; max-age=3600000; path=/`,
+      ]);
+
       res.status(201).json({ user: userExist });
     } else {
       throw new CustomAppError("Passwords do not match", 401);
@@ -92,8 +118,8 @@ export const confirm_email = async (
     if (!findUser) {
       throw new Error("Link probably been tampered with");
     }
-    const confirmUser = await User.findByIdAndUpdate(
-      verifyToken.id,
+    const confirmUser = await User.findOneAndUpdate(
+      { _id: verifyToken.id },
       {
         isAccountActive: true,
       },

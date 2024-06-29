@@ -6,6 +6,8 @@ import {
   logout_user,
 } from "../controllers/userController";
 import { protect } from "../middlewares/authMiddleware";
+import passport from "passport";
+import "../strategies/githubStrategy";
 
 const router: Router = express.Router();
 
