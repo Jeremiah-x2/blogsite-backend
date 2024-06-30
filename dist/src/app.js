@@ -18,7 +18,7 @@ const MongoStore = require("connect-mongo");
 require("../strategies/githubStrategy");
 dotenv_1.default.config();
 const app = (0, express_1.default)();
-mongoose_1.default.connect(process.env.MONGODB_URI);
+mongoose_1.default.connect("mongodb+srv://hussainianna757:tJsEbu1i5xeRN5st@blog-site.0pgxa6f.mongodb.net/blog");
 const port = process.env.PORT || 8000;
 const db = mongoose_1.default.connection;
 db.on("connected", () => console.log("Connected to DataBase successfully"));

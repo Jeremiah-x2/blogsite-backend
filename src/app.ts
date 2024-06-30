@@ -22,7 +22,9 @@ dotenv.config();
 
 const app: Application = express();
 
-mongoose.connect(process.env.MONGODB_URI!);
+mongoose.connect(
+  "mongodb+srv://hussainianna757:tJsEbu1i5xeRN5st@blog-site.0pgxa6f.mongodb.net/blog"
+);
 const port = process.env.PORT || 8000;
 
 const db = mongoose.connection;
