@@ -56,7 +56,7 @@ export const create_user = async (
       console.log(newUser);
       res.json({
         user: newUser,
-        confirmationRoute: `http://localhost:3000/users/confirm/${token}`,
+        confirmationRoute: `${process.env.ACCESS_ORIGIN}/users/confirm/${token}`,
         uploadResult,
       });
     } else {
