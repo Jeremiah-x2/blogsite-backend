@@ -2,9 +2,8 @@
   "name": "backend",
   "version": "0.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "start": "node ./src/app.ts",
+    "start": "node ./dist/src/app.js",
     "dev": "nodemon  ./src/app.ts"
   },
   "dependencies": {
